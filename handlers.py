@@ -1,11 +1,12 @@
 from aiogram import Router
 from aiogram.filters import Command, CommandStart, StateFilter
-from aiogram.types import Message, KeyboardButton
+from aiogram.types import Message, KeyboardButton, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import ReplyKeyboardMarkup
 from states import FSMForm
 import requests
 from aiogram.fsm.state import default_state
+from data import DataBase
 
 router = Router()
 
@@ -18,6 +19,17 @@ def cancel_kb():
 @router.message(CommandStart())
 async def start(message: Message):
     await message.answer(text='Привет!')
+    DataBase.add_user(name=message.from_user.username, tg_id=message.from_user.id)
+
+@router.message(Command("count"))
+async def count(message: Message):
+    await message.answer(f"вы отправили {DataBase.get_count(message.from_user.id)} сообщений")
+
+
+@router.message(lambda message: message.text == "Отменить", ~StateFilter(default_state))
+async def process_cancel(message: Message, state: FSMContext):
+    await message.answer("Ввод отменён", reply_markup=ReplyKeyboardRemove())
+    await state.clear()
 
 
 @router.message(Command("help"))
@@ -49,18 +61,12 @@ async def process_city(message: Message, state: FSMContext):
         "format": "json"}
 
     response = requests.get(geocoder_api_server, params=geocoder_params)
-
-    if not response:
+    if not response or len(response.json()["response"]['GeoObjectCollection']['featureMember']) == 0:
         await message.answer("Такого города не существует")
 
     else:
         json_response = response.json()
         await message.answer(json_response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
                                  'metaDataProperty']['GeocoderMetaData']['AddressDetails']['Country']['CountryName'])
-    await state.clear()
-
-
-@router.message(lambda message: message.text == "Отменить", ~StateFilter(default_state))
-async def process_cancel(message: Message, state: FSMContext):
-    await message.answer("Ввод отменён")
-    await state.clear()
+    await message.answer(text="отправьте город, а я назову страну, в которой находится этот город",
+                         reply_markup=cancel_kb())
