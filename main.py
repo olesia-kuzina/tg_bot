@@ -5,8 +5,9 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
 
 import keys
+from AI import AIHelper
 from data import db_session
-from handlers import router
+import handlers
 from middlware import MessageMiddlWare
 
 logging.basicConfig(
@@ -23,14 +24,16 @@ async def set_menu(bot: Bot):
         BotCommand(command="/country", description="описание"),
         BotCommand(command="/city", description="описание"),
         BotCommand(command="/count", description="описание"),
+        BotCommand(command="/attraction", description="описание"),
     ]
     await bot.set_my_commands(s)
 
 async def main(bot: Bot):
+    handlers.AI = AIHelper()
     dp = Dispatcher()
     dp.update.middleware(MessageMiddlWare())
     dp.startup.register(set_menu)
-    dp.include_router(router)
+    dp.include_router(handlers.router)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 

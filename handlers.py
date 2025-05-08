@@ -7,8 +7,10 @@ from states import FSMForm
 import requests
 from aiogram.fsm.state import default_state
 from data import DataBase
+from country_helpers import CountryHelpers
 
 router = Router()
+AI = None
 
 
 def cancel_kb():
@@ -16,10 +18,27 @@ def cancel_kb():
     return kb
 
 
+@router.message(Command("attraction"))
+async def attraction(message: Message, state: FSMContext):
+    await message.answer(
+        text="отправьте город или страну, а я назову 5 достопримечательностей и интересныы факты к ним",
+        reply_markup=cancel_kb())
+    await state.set_state(FSMForm.enter_request)
+
+
+@router.message(StateFilter(FSMForm.enter_request))
+async def process_attraction(message: Message):
+    await message.answer(await AI.get_text_message(request=message.text))
+    await message.answer(
+        text="отправьте город или страну, а я назову несколько достопримечательностей и интересныы факты к ним",
+        reply_markup=cancel_kb())
+
+
 @router.message(CommandStart())
 async def start(message: Message):
     await message.answer(text='Привет!')
     DataBase.add_user(name=message.from_user.username, tg_id=message.from_user.id)
+
 
 @router.message(Command("count"))
 async def count(message: Message):
@@ -38,8 +57,9 @@ async def help(message: Message):
 
 
 @router.message(Command("country"))
-async def capitals(message: Message):
-    await message.answer(text="Введите страну, а я назову сталицу")
+async def capitals(message: Message, state: FSMContext):
+    await message.answer(text="Введите страну, а я назову столицу", reply_markup=cancel_kb())
+    await state.set_state(FSMForm.enter_country)
 
 
 @router.message(Command("city"))
@@ -69,4 +89,16 @@ async def process_city(message: Message, state: FSMContext):
         await message.answer(json_response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject'][
                                  'metaDataProperty']['GeocoderMetaData']['AddressDetails']['Country']['CountryName'])
     await message.answer(text="отправьте город, а я назову страну, в которой находится этот город",
+                         reply_markup=cancel_kb())
+
+
+@router.message(StateFilter(FSMForm.enter_country))
+async def process_country(message: Message, state: FSMContext):
+    capital = CountryHelpers.search_capital(message.text)
+    if not capital:
+        await message.answer("Такой страны не существует")
+
+    else:
+        await message.answer(capital)
+    await message.answer(text="отправьте страну, а я назову столицу",
                          reply_markup=cancel_kb())
