@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.filters import Command, CommandStart, StateFilter
+from aiogram.filters import Command, CommandStart, StateFilter, BaseFilter
 from aiogram.types import Message, KeyboardButton, ReplyKeyboardRemove, BufferedInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import ReplyKeyboardMarkup
@@ -9,6 +9,10 @@ from aiogram.fsm.state import default_state
 from data import DataBase
 from country_helpers import CountryHelpers
 from keys import key_api_maps
+
+class IsAdmin(BaseFilter):
+    async def __call__(self, message: Message):
+        return message.from_user.id == 1466027893
 
 router = Router()
 AI = None
@@ -129,3 +133,8 @@ async def process_attraction(message: Message):
     await message.answer(
         text="отправьте город или страну, а я назову несколько достопримечательностей и интересныы факты о них",
         reply_markup=cancel_kb())
+
+
+@router.message(Command("get_users"), IsAdmin())
+async def get_users(message: Message):
+    await message.answer('\n'.join(DataBase.get_users()))

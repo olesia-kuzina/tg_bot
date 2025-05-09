@@ -36,3 +36,11 @@ class DataBase:
             user.count += 1
             session.commit()
         session.close()
+
+    @staticmethod
+    def get_users():
+        session = create_session()
+        users = session.query(User).all()
+        users = [f"{user.id} {user.user_name} {user.tg_id}" for user in users]
+        session.close()
+        return users
