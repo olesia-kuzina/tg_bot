@@ -20,11 +20,11 @@ logging.basicConfig(
 
 async def set_menu(bot: Bot):
     s = [
-        BotCommand(command="/help", description="описание"),
-        BotCommand(command="/country", description="описание"),
-        BotCommand(command="/city", description="описание"),
-        BotCommand(command="/count", description="описание"),
-        BotCommand(command="/attraction", description="описание"),
+        BotCommand(command="/help", description="помощь"),
+        BotCommand(command="/country", description="узнать столицу по стране"),
+        BotCommand(command="/city", description="узнать страну по городу"),
+        BotCommand(command="/count", description="количество сообщений"),
+        BotCommand(command="/attraction", description="достопримечательности"),
     ]
     await bot.set_my_commands(s)
 

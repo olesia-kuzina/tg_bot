@@ -22,20 +22,28 @@ def cancel_kb():
 @router.message(Command("attraction"))
 async def attraction(message: Message, state: FSMContext):
     await message.answer(
-        text="отправьте город или страну, а я назову несколько достопримечательностей и интересныы факты к ним",
+        text="Отправьте город или страну, а я назову несколько достопримечательностей и интересные факты о них",
         reply_markup=cancel_kb())
     await state.set_state(FSMForm.enter_request)
 
 
 @router.message(CommandStart())
 async def start(message: Message):
-    await message.answer(text='Привет!')
+    await message.answer(
+        text='Добро пожаловать! Это бот, который может Вам когда-нибудь пригодится.' + "\n" +
+             "Вот обзор по функциям этого бота:" + '\n' +
+             "/help - поможет сориентироваться в командах" + "\n" +
+             "/country - Вы можете отправить страну, а я назову её столицу" + "\n" +
+             "/city - отправьте город, а я назову страну, где он находится, и отправлю карту" + "\n" +
+             "/attractions - отправьте город или страну, а я, благодаря нейросети, назову несколько " +
+             "достопримечательностей и интересные факты о них" + "\n" +
+             "/count - Вы можете узнать количество отправленных сообщений")
     DataBase.add_user(name=message.from_user.username, tg_id=message.from_user.id)
 
 
 @router.message(Command("count"))
 async def count(message: Message):
-    await message.answer(f"вы отправили {DataBase.get_count(message.from_user.id)} сообщений")
+    await message.answer(f"Вы отправили {DataBase.get_count(message.from_user.id)} сообщений")
 
 
 @router.message(lambda message: message.text == "Отменить", ~StateFilter(default_state))
@@ -46,7 +54,13 @@ async def process_cancel(message: Message, state: FSMContext):
 
 @router.message(Command("help"))
 async def help(message: Message):
-    await message.answer(text="Это сообщение поможет сориентироваться по работе с этим ботом")
+    await message.answer(text="Это сообщение поможет сориентироваться по работе с этим ботом" + "\n" +
+                              "/help - поможет сориентироваться в командах" + "\n" +
+                              "/country - Вы можете отправить страну, а я назову её столицу" + "\n" +
+                              "/city - отправьте город, а я назову страну, где он находится, и отправлю карту" + "\n" +
+                              "/attractions - отправьте город или страну, а я, благодаря нейросети, назову несколько " +
+                              "достопримечательностей и интересные факты о них" + "\n" +
+                              "/count - Вы можете узнать количество отправленных сообщений")
 
 
 @router.message(Command("country"))
@@ -57,7 +71,7 @@ async def capitals(message: Message, state: FSMContext):
 
 @router.message(Command("city"))
 async def city(message: Message, state: FSMContext):
-    await message.answer(text="отправьте город, а я назову страну, в которой находится этот город",
+    await message.answer(text="Отправьте город, а я назову страну, где он находится, и отправлю карту",
                          reply_markup=cancel_kb())
     await state.set_state(FSMForm.enter_city)
 
@@ -76,7 +90,7 @@ async def process_city(message: Message, state: FSMContext):
     response = requests.get(geocoder_api_server, params=geocoder_params)
     if not response or len(response.json()["response"]['GeoObjectCollection']['featureMember']) == 0:
         await message.answer("Такого города не существует")
-        await message.answer(text="отправьте город, а я назову страну, в которой находится этот город",
+        await message.answer(text="Отправьте город, а я назову страну, в которой находится этот город, и отпралю карту",
                              reply_markup=cancel_kb())
         return
     json_response = response.json()
@@ -91,9 +105,9 @@ async def process_city(message: Message, state: FSMContext):
     if r.ok:
         await message.answer_photo(BufferedInputFile(r.content, 'maps.png'))
     else:
-        await message.answer('не получилось загрузить карту')
+        await message.answer('Не получилось загрузить карту')
 
-    await message.answer(text="отправьте город, а я назову страну, в которой находится этот город",
+    await message.answer(text="Отправьте город, а я назову страну, в которой находится этот город, и отправлю карту",
                          reply_markup=cancel_kb())
 
 
@@ -113,5 +127,5 @@ async def process_country(message: Message, state: FSMContext):
 async def process_attraction(message: Message):
     await message.answer(await AI.get_text_message(request=message.text))
     await message.answer(
-        text="отправьте город или страну, а я назову несколько достопримечательностей и интересныы факты к ним",
+        text="отправьте город или страну, а я назову несколько достопримечательностей и интересныы факты о них",
         reply_markup=cancel_kb())
